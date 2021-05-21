@@ -1,6 +1,8 @@
 import praw
 import time
 import os
+import dynamo
+
 
 FOLDER = 'posts'
 LIMIT = 500                 # How many posts to download at each iteration
@@ -22,20 +24,29 @@ def get_posts() -> str:
     )
     lista = reddit.subreddit('all').new(limit=LIMIT)
 
-    rows = ""
+    items = []
     for s in lista:
-        rows += f"{s.name}|||{s.title}|||{s.url}|||{s.num_comments}|||{s.created_utc}\n"
-    return rows
+        items += [(s.name, s.title, s.url, s.num_comments, s.created_utc, s.subreddit)]
+    return items
 
 if __name__ == "__main__":
-    if not os.path.isdir(FOLDER):
-        os.mkdir(FOLDER)
 
-    for n in range(TOTAL_FILES):
-        filename = str(n)
-        filepath = os.path.join(FOLDER, filename)
-        iterations = POSTS_PER_FILE // LIMIT
-        for _ in range(iterations):
-            rows = get_posts()
-            save_to_disk(filepath, rows)
-            time.sleep(5)
+
+    table = dynamo.get_posts_table()
+    posts = get_posts()
+
+    for i in range(TOTAL_POSTS / LIMIT):
+        with table.batch_writer(overwrite_by_pkeys=['name', 'timestamp']) as batch:
+            for post in posts:
+                batch.put_item(
+                    Item={
+                        'name': str(post[0]),
+                        'title': str(post[1]),
+                        'url': str(post[2]),
+                        'num_comments': int(post[3]),
+                        'timestamp': int(post[4]),
+                        'subreddit': str(post[5])
+                    }
+                )
+        time.sleep(5)
+
