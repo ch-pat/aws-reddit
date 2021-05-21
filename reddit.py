@@ -40,6 +40,7 @@ if __name__ == "__main__":
         count = 0
         with table.batch_writer(overwrite_by_pkeys=['name', 'timestamp']) as batch:
             for post in posts:
+                time.sleep(0.2)
                 count += 1
                 batch.put_item(
                     Item={
