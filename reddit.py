@@ -33,12 +33,14 @@ if __name__ == "__main__":
 
 
     table = dynamo.get_posts_table()
-    posts = get_posts()
     start_time = time.time()
 
     for i in range(TOTAL_POSTS // LIMIT):
+        posts = get_posts()
+        count = 0
         with table.batch_writer(overwrite_by_pkeys=['name', 'timestamp']) as batch:
             for post in posts:
+                count += 1
                 batch.put_item(
                     Item={
                         'name': str(post[0]),
@@ -52,5 +54,6 @@ if __name__ == "__main__":
         time.sleep(5)
         print(f"Currently at iteration {i} of {TOTAL_POSTS // LIMIT}")
         print(f"Elapsed time: {time.time() - start_time}")
+        print(f"Added {count} posts")
 
 
