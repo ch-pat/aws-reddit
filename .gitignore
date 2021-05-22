@@ -7,3 +7,4 @@ abbla
 pyvenv.cfg
 desktop.pem
 /posts
+/__pycache__
