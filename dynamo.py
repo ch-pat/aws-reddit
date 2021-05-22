@@ -1,4 +1,6 @@
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
 
 TABLE_NAME = 'posts'
 
@@ -43,6 +45,24 @@ def create_posts_table():
     )
     return table
 
+
+def query_table_by_title(query_string: str):
+    table = get_posts_table()
+    response = table.scan(
+        FilterExpression=Attr('title').contains(query_string)
+    )
+    results = []
+    items = response['Items']
+    for item in items:
+        url = item['url']
+        name = item['name']
+        num_comments = item['num_comments']
+        title = item['title']
+        timestamp = item['timestamp']
+        subreddit = item['subreddit']
+        row = [title, subreddit, url, num_comments, timestamp, name]
+        results += [row]
+    return results
 
 if __name__ == "__main__":
     table = get_posts_table()

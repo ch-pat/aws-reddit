@@ -1,0 +1,60 @@
+{% extends 'bootstrap/base.html' %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block styles %}
+{{ super() }}
+	<style>
+		body { background: #e8f1f9; }
+	</style>
+{% endblock %}
+
+
+{% block title %}
+Reddit frontpage
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-10 col-lg-8 mx-lg-auto mx-md-auto">
+
+      <h1 class="pt-5 pb-2">Reddit frontpage</h1>
+
+      <p class="lead">This page allows you to search posts on reddit based on a keyword.</p>
+
+      {{ wtf.quick_form(form) }}
+
+      <p class="pt-5"><strong>
+        <table>
+            <!-- Table headers -->
+            <tr style="color: rgb(0, 0, 0); ">    
+                <th>Title</th>
+                <th>Subreddit</th>
+                <th>url</th>
+                <th># Comments</th>
+                <th>timestamp</th>
+                <th>name</th>
+            </tr>
+                  
+            <!-- For loop logic of jinja template -->
+            {%for row in table_contents%}
+              
+            <tr>
+                {% for cell in row%}
+                        <td>{{cell}}</td>
+                {%endfor%}
+            </tr>
+
+            {%endfor%}
+                            
+        </table>  
+
+      </strong></p>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
