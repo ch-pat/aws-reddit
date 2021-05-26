@@ -13,27 +13,40 @@ app.config['SECRET_KEY'] = '7d441f27d441f27567d441f2b6176a'
 Bootstrap(app)
 
 class SearchForm(FlaskForm):
-    choices = dynamo.subreddits()
-    subreddit = SelectField('Subreddit', choices=choices)
+    subreddit = StringField('Subreddit')
     search = StringField('Search')
     submit = SubmitField('Submit')
 
+
+def find_subreddit(search: str) -> str:
+    search = search.lower()
+    subreddits = dynamo.subreddits()
+    for subreddit in subreddits:
+        if search in subreddit.lower():
+            return subreddit
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     # you must tell the variable 'form' what you named the class, above
     # 'form' is the variable name used in this template: index.html
     form = SearchForm()
+    message = ""
     if form.validate_on_submit():
         search = form.search.data
         subreddit = form.subreddit.data
+        subreddit = find_subreddit(subreddit)
+        if subreddit:
         # TODO: fai qualcosa per migliorare la ricerca che non da risultati
-        table_contents = dynamo.query_table_by_title(search, subreddit)
-        # empty the form field
-        form.search.data = ""
+            table_contents = dynamo.query_table_by_title(search, subreddit)
+            # empty the form field
+            form.search.data = ""
+            form.subreddit.data = subreddit
+        else:
+            message = "No matching subreddit found"
+            table_contents = dynamo.default_query()
     else:
         table_contents = dynamo.default_query()
 
-    return render_template('index.html', form=form, table_contents=table_contents)
+    return render_template('index.html', form=form, table_contents=table_contents, message=message)
 
 app.run(debug=True)

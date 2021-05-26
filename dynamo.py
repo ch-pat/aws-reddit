@@ -84,7 +84,7 @@ def default_query():
         results += [row]
     return results
 
-def subreddits():
+def subreddits() -> list:
     if os.path.isfile('subreddits'):
         with open('subreddits', 'r', encoding='utf-8') as f:
             results = f.readlines()
