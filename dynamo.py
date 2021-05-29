@@ -49,20 +49,20 @@ def create_posts_table():
 
 def query_table_by_title(query_string: str, subreddit: str):
     table = get_posts_table()
-    response = table.scan(
+    response = table.query(
+        IndexName='subreddit-timestamp-index',
+        KeyConditionExpression=Key('subreddit').eq(subreddit),
         FilterExpression=Attr('title').contains(query_string)
-        & Attr('subreddit').eq(subreddit)
     )
     results = []
     items = response['Items']
     for item in items:
         url = item['url']
         name = item['name']
-        num_comments = item['num_comments']
         title = item['title']
         timestamp = item['timestamp']
         subreddit = item['subreddit']
-        row = [title, subreddit, url, num_comments, timestamp, name]
+        row = [title, subreddit, url, timestamp, name]
         results += [row]
     return results
 
@@ -76,11 +76,10 @@ def default_query():
     for item in items:
         url = item['url']
         name = item['name']
-        num_comments = item['num_comments']
         title = item['title']
         timestamp = item['timestamp']
         subreddit = item['subreddit']
-        row = [title, subreddit, url, num_comments, timestamp, name]
+        row = [title, subreddit, url, timestamp, name]
         results += [row]
     return results
 
