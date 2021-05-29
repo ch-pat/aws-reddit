@@ -31,7 +31,9 @@ def index():
     # 'form' is the variable name used in this template: index.html
     form = SearchForm()
     message = ""
+    table_contents = [[]]
     if form.validate_on_submit():
+        frontpage=False
         search = form.search.data
         subreddit = form.subreddit.data
         subreddit = find_subreddit(subreddit)
@@ -41,12 +43,14 @@ def index():
             # empty the form field
             form.search.data = ""
             form.subreddit.data = subreddit
+            message = f"{len(table_contents)} results found"
         else:
             message = "No matching subreddit found"
-            table_contents = dynamo.default_query()
     else:
-        table_contents = dynamo.default_query()
+        # implementa qui le statistiche
+        dynamo.get_subreddit_counts()
+        frontpage=True
 
-    return render_template('index.html', form=form, table_contents=table_contents, message=message)
+    return render_template('index.html', form=form, table_contents=table_contents, message=message, frontpage=frontpage)
 
 app.run(debug=True)

@@ -83,6 +83,25 @@ def default_query():
         results += [row]
     return results
 
+
+def get_subreddit_counts():
+    if os.path.isfile('subreddit_counts'):
+        with open('subreddit_counts', 'r', encoding='utf-8') as f:
+            results = f.readlines()
+
+        return [r[:-1] for r in results]
+
+    subredditss = subreddits()
+    i = 0
+    sub_counts = []
+    for subreddit in subredditss:
+        i += 1
+        print(i)
+        results = query_table_by_title('', subreddit)
+        sub_counts += [f"{subreddit} {len(results)}\n"]
+    with open('subreddit_counts', 'w+', encoding='utf-8') as f:
+        f.writelines(sub_counts)
+
 def subreddits() -> list:
     if os.path.isfile('subreddits'):
         with open('subreddits', 'r', encoding='utf-8') as f:
