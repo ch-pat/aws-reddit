@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import dynamo
+import matplotlib.pyplot as plt
 
 def find_subreddit(search: str) -> str:
     search = search.lower()
@@ -8,6 +9,18 @@ def find_subreddit(search: str) -> str:
     for subreddit in subreddits:
         if search in subreddit.lower():
             return subreddit
+
+def extract_top(sub_counts: list, limit: int) -> (list, list):
+    top = []
+    tuples = [(row.split()[0], int(row.split()[1])) for row in sub_counts]
+    tuples = sorted(tuples, key=lambda x: x[1], reverse=True)[:limit]
+    names = []
+    counts = []
+    for t in tuples:
+        names += [t[0]]
+        counts += [t[1]]
+    return names, counts
+
 
 with st.form(key='search_form'):
     form_subreddit = st.text_input(label='Search Subreddit')
@@ -30,5 +43,13 @@ if submit_button:
     st.write(table)
 else:
     # Pagina principale prima della ricerca
-    dynamo.get_subreddit_counts()
-    st.write('siamo nell else')
+    sub_counts = dynamo.get_subreddit_counts()
+    names, counts = extract_top(sub_counts, limit=30)
+    
+    fig, ax = plt.subplots(1, 1)
+    ax.bar(names, counts)
+    ax.set_title("Top Subreddits")
+    ax.set_xlabel('Subreddit')
+    ax.set_ylabel('Number of Posts')
+    ax.set_xticklabels(names, rotation=90)
+    st.pyplot(fig)
