@@ -3,13 +3,22 @@ import pandas as pd
 import dynamo
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import datetime
 
-def find_subreddit(search: str) -> str:
+def find_subreddit(search: str) -> list:
+    if not search:
+        return []
     search = search.lower()
     subreddits = dynamo.subreddits()
+    found = []
     for subreddit in subreddits:
         if search in subreddit.lower():
-            return subreddit
+            found += [subreddit]
+    return found
+
+def convert_timestamp(timestamp: int):
+    time = datetime.datetime.fromtimestamp(timestamp)
+    return str(time)
 
 def extract_top(sub_counts: list, limit: int) -> (list, list):
     top = []
@@ -28,37 +37,50 @@ def extract_string_from_titles(titles: pd.DataFrame) -> str:
         result += f" {str(title)}"
     return result
 
+form = st.form(key='search_form')
 
-with st.form(key='search_form'):
-    form_subreddit = st.text_input(label='Search Subreddit')
-    form_search = st.text_input(label='Search Title')
-    submit_button = st.form_submit_button(label='Submit')
+form_subreddit = form.text_input(label='Search Subreddit')
+form_search = form.text_input(label='Search Title')
+submit_button = form.form_submit_button(label='Submit')
+
+# Defaults to prevent crashes
+table_contents = [[]]
+message = ""
+table = None
 
 if submit_button:
-    subreddit = find_subreddit(form_subreddit)
-    if subreddit:
-        table_contents = dynamo.query_table_by_title(form_search, subreddit)
-        message = f"{len(table_contents)} results found in subreddit {subreddit}"
-    else:
+    subreddits = find_subreddit(form_subreddit)
+    if len(subreddits) == 0:
         message = "No matching subreddit found"
-    
+    elif len(subreddits) == 1:
+        table_contents = dynamo.query_table_by_title(form_search, subreddits[0])
+        message = f"{len(table_contents)} results found in subreddit {subreddits[0]}"
+        # Prepare table
+        headings = ['Title', 'Subreddit', 'url', 'timestamp', 'name']
+        table = pd.DataFrame(table_contents)
+        table.columns = headings
+        titles = extract_string_from_titles(table['Title'])
+        wordcloud = WordCloud().generate(titles)
+        # Apply aesthetic changes to table
+        table = table.drop(labels='name', axis=1)
+        table['timestamp'] = table['timestamp'].apply(convert_timestamp)
+    else:
+        message = "Multiple matching subreddits found!\nDid you mean one of these:  \n"
+        for s in subreddits:
+            message += f"{s}  \n"
+        message = message[:-1]
+
     st.write(message)
-    # Prepara tabella
-    headings = ['Title', 'Subreddit', 'url', 'timestamp', 'name']
-    table = pd.DataFrame(table_contents)
-    table.columns = headings
 
-    titles = extract_string_from_titles(table['Title'])
-    wordcloud = WordCloud().generate(titles)
+    if type(table) is pd.DataFrame:
+        st.write(table)
+        # Display wordcloud
+        st.markdown("<center>Most used words Word Cloud</center>", unsafe_allow_html=True)
+        fig, ax = plt.subplots(1, 1)
+        plt.imshow(wordcloud)
+        plt.axis("off")
+        st.pyplot(fig)
 
-    st.write(table)
-
-    # Display wordcloud
-    st.markdown("<center>Most used words Word Cloud</center>", unsafe_allow_html=True)
-    fig, ax = plt.subplots(1, 1)
-    plt.imshow(wordcloud)
-    plt.axis("off")
-    st.pyplot(fig)
 else:
     # Pagina principale prima della ricerca
     sub_counts = dynamo.get_subreddit_counts()
