@@ -1,6 +1,6 @@
 FROM python:3.7.10-buster
 COPY . /app
-COPY ../.aws /
+COPY .aws /.aws
 WORKDIR /app
 RUN pip install -r requirements.txt
 EXPOSE 8501
