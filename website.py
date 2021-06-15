@@ -8,12 +8,16 @@ import datetime
 def find_subreddit(search: str) -> list:
     if not search:
         return []
+    exact_match = search
     search = search.lower()
     subreddits = dynamo.subreddits()
     found = []
     for subreddit in subreddits:
         if search in subreddit.lower():
             found += [subreddit]
+    for subreddit in found:
+        if subreddit == exact_match:
+            return [subreddit]
     return found
 
 def convert_timestamp(timestamp: int):
@@ -54,16 +58,19 @@ if submit_button:
         message = "No matching subreddit found"
     elif len(subreddits) == 1:
         table_contents = dynamo.query_table_by_title(form_search, subreddits[0])
-        message = f"{len(table_contents)} results found in subreddit {subreddits[0]}"
-        # Prepare table
-        headings = ['Title', 'Subreddit', 'url', 'timestamp', 'name']
-        table = pd.DataFrame(table_contents)
-        table.columns = headings
-        titles = extract_string_from_titles(table['Title'])
-        wordcloud = WordCloud().generate(titles)
-        # Apply aesthetic changes to table
-        table = table.drop(labels='name', axis=1)
-        table['timestamp'] = table['timestamp'].apply(convert_timestamp)
+        if len(table_contents) == 0:
+            message = f"No posts with that title found in subreddit {subreddits[0]}"
+        else:
+            message = f"{len(table_contents)} results found in subreddit {subreddits[0]}"
+            # Prepare table
+            headings = ['Title', 'Subreddit', 'url', 'timestamp', 'name']
+            table = pd.DataFrame(table_contents)
+            table.columns = headings
+            titles = extract_string_from_titles(table['Title'])
+            wordcloud = WordCloud().generate(titles)
+            # Apply aesthetic changes to table
+            table = table.drop(labels='name', axis=1)
+            table['timestamp'] = table['timestamp'].apply(convert_timestamp)
     else:
         message = "Multiple matching subreddits found!\nDid you mean one of these:  \n"
         for s in subreddits:
