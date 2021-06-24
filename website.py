@@ -89,7 +89,7 @@ if submit_button:
         st.pyplot(fig)
 
 else:
-    # Pagina principale prima della ricerca
+    # Main page before search
     sub_counts = dynamo.get_subreddit_counts()
     names, counts = extract_top(sub_counts, limit=30)
     
